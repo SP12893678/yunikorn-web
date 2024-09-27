@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import { Component, OnInit} from '@angular/core';
+import { Component, OnInit, ViewEncapsulation} from '@angular/core';
 import { Router } from '@angular/router';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { QueueInfo } from '@app/models/queue-info.model';
@@ -38,7 +38,8 @@ export interface TreeNode {
 @Component({
   selector: 'queues-v2-view',
   templateUrl: './queues-v2.component.html',
-  styleUrls: ['./queues-v2.component.scss']
+  styleUrls: ['./queues-v2.component.scss'],
+  encapsulation: ViewEncapsulation.None
 })
 
 export class QueueV2Component implements OnInit {
@@ -163,14 +164,14 @@ function queueVisualization(rawData : QueueInfo){
       var treeData = treelayout(root)
       var nodes = treeData.descendants()
       var node = svgGroup
-          .selectAll<SVGGElement, d3hierarchy.HierarchyNode<QueueInfo>>('g.card')
+          .selectAll<SVGGElement, d3hierarchy.HierarchyNode<QueueInfo>>('g.card-wrapper')
           .data(nodes, function(d : any) { 
             return d.id || (d.id = ++numberOfNode); 
           });
 
       var nodeEnter = node
           .enter().append('g')
-          .attr('class', 'card')
+          .attr('class', 'card-wrapper')
           .attr("transform", function() {
               if (source.x0 && source.y0) {
                   return "translate(" + source.x0 + "," + source.y0 + ")";
@@ -183,88 +184,37 @@ function queueVisualization(rawData : QueueInfo){
       nodeEnter.each(function(d) {
         const group = select(this);
 
-        group.append("rect")
+        const foreignObject = group.append("foreignObject")
+          .attr("x", 0) 
+          .attr("y", 0)
           .attr("width", 300) 
           .attr("height", 120) 
-          .attr("fill", "none")
-          .attr("stroke", "white")
-          .attr("stroke-width", 2) 
-          .attr("rx", 10)
-          .attr("ry", 10);
-  
-        group.append("rect")
-          .attr("width", 300)
-          .attr("height", 30)
-          .attr("fill", "#d4eaf7");
-  
-        group.append("rect")
-          .attr("y", 30)
-          .attr("width", 300)
-          .attr("height", 60)
-          .attr("fill", "white");
-  
-        group.append("rect")
-          .attr("y", 90)
-          .attr("width", 300)
-          .attr("height", 30)
-          .attr("fill", "#e6f4ea")
-          .attr("class", "cardBottom");
-        
-        group.append("image")
-          .attr("href", "./assets/images/hierarchy.svg") 
-          .attr("x", 5) 
-          .attr("y", 5) 
-          .attr("width", 20)
-          .attr("height", 20);
-  
-        group.append("text")
-          .attr("x", 30) 
-          .attr("y", 22.5)
-          .attr("font-size", "25px")
-          .attr("fill", "black")
-          .text(d.data.queueName);
-        
-        const plusCircle = group.append("circle")
-          .attr("cx", 150)
-          .attr("cy", 120) 
-          .attr("r", 20)   
-          .attr("fill", "white") 
-          .attr("stroke", "black") 
-          .attr("stroke-width", 1)
-          .style("visibility", "hidden")
-          .on('click', click);
-        
-        const plusText = group.append("text")
-          .attr("x", 150) 
-          .attr("y", 127) 
-          .attr("text-anchor", "middle") 
-          .attr("font-size", "20px") 
-          .attr("fill", "black") 
+          .style("overflow", "visible");
+
+        const container = foreignObject.append("xhtml:div")
+          .attr("class", "card")
+
+        const cardHeader = container.append("xhtml:div")
+          .attr("class", "card-header");
+
+          cardHeader.append("img")
+          .attr("class", "card-header-icon")
+          .attr("src", "./assets/images/hierarchy.svg");
+
+          cardHeader.append("xhtml:div")
+          .attr("class", "card-header-title")
+          .html(d.data.queueName);
+              
+          container.append("xhtml:div")
+          .attr("class", "card-body");
+
+          container.append("xhtml:div")
+          .attr("class", "card-bottom");
+ 
+          const plusCircle = container.append("xhtml:div")
+          .attr("class", "plus-circle")
           .text("+")
-          .attr("pointer-events", "none") // Prevents the text from interfering with the click event
-          .style("visibility", "hidden");
-        
-        group.on("mouseover", function() {
-          plusCircle.style("visibility", "visible");
-          plusText.style("visibility", "visible");
-        });
-      
-        // Hide the circle and '+' text when the mouse leaves the node
-        group.on("mouseout", function() {
-          plusCircle.style("visibility", "hidden");
-          plusText.style("visibility", "hidden");
-        });
-
-        // Add hover effect to the circle to change its color to grey
-        plusCircle.on("mouseover", function() {
-          select(this).attr("fill", "grey");
-        });
-
-        // Reset circle color when mouse leaves
-        plusCircle.on("mouseout", function() {
-          select(this).attr("fill", "white");
-        });
-
+          .on('click', click);
       });
   
       const nodeUpdate = nodeEnter.merge(node)
@@ -277,8 +227,8 @@ function queueVisualization(rawData : QueueInfo){
             return "translate(" + d.x + "," + d.y + ")";
         });
      
-      nodeUpdate.select('.cardBottom')
-      .style("fill", function(d : any) {
+      nodeUpdate.select('.card-bottom')
+      .style("background", function(d : any) {
           return d._children ? "#9fc6aa" : "#e6f4ea";
       })
   
