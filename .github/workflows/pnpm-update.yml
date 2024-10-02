@@ -14,13 +14,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16'  # 根據你的專案需要設置版本
+          node-version: '18'  # 根據你的專案需要設置版本
 
       - name: Install pnpm
         run: npm install -g pnpm
 
       - name: Update dependencies
-        run: pnpm update --latest
+        run: pnpm update
 
       - name: Commit and push updates
         run: |
