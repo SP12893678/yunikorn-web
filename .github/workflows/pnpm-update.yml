@@ -45,7 +45,10 @@ jobs:
 
       - name: Update dependencies if vulnerabilities found
         if: steps.check_vulnerabilities.outcome == 'success'
-        run: pnpm update --latest
+        run: pnpm update
+
+      - name: Clean up audit report
+        run: rm audit-report.json  # 刪除 audit report 文件
 
       - name: Commit and push updates
         if: steps.check_vulnerabilities.outcome == 'success'
