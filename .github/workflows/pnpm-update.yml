@@ -2,8 +2,8 @@ name: Audit and Update pnpm Dependencies
 
 on:
   schedule:
-    - cron: '0 0 * * 1'  # 每周一運行
-  workflow_dispatch:  # 允許手動觸發
+    - cron: '0 0 * * 1'  # weely 
+  workflow_dispatch:  # allow manual trigger
 
 jobs:
   audit-and-update-dependencies:
@@ -14,7 +14,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'  # 根據你的專案需要設置版本
+          node-version: '18'
 
       - name: Install pnpm
         run: npm install -g pnpm
@@ -48,7 +48,7 @@ jobs:
         run: pnpm update
 
       - name: Clean up audit report
-        run: rm audit-report.json  # 刪除 audit report 文件
+        run: rm audit-report.json 
 
       - name: Commit and push updates
         if: steps.check_vulnerabilities.outcome == 'success'
