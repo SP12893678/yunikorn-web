@@ -25,7 +25,7 @@ jobs:
       - name: Run pnpm audit
         id: audit
         run: |
-          pnpm audit --json > audit-report.json
+          pnpm audit --json > audit-report.json || true 
           jq '.metadata.vulnerabilities' audit-report.json
 
       - name: Check for vulnerabilities
