@@ -26,14 +26,19 @@ jobs:
         id: audit
         run: |
           pnpm audit --json > audit-report.json
-          jq '.metadata.vulnerabilities.total' audit-report.json
+          jq '.metadata.vulnerabilities' audit-report.json
 
       - name: Check for vulnerabilities
         id: check_vulnerabilities
         run: |
-          VULNERABILITIES=$(jq '.metadata.vulnerabilities.total' audit-report.json)
-          echo "Vulnerabilities: $VULNERABILITIES"
-          if [ "$VULNERABILITIES" -eq 0 ]; then
+          INFO=$(jq '.metadata.vulnerabilities.info' audit-report.json)
+          LOW=$(jq '.metadata.vulnerabilities.low' audit-report.json)
+          MODERATE=$(jq '.metadata.vulnerabilities.moderate' audit-report.json)
+          HIGH=$(jq '.metadata.vulnerabilities.high' audit-report.json)
+          CRITICAL=$(jq '.metadata.vulnerabilities.critical' audit-report.json)
+          TOTAL=$((INFO + LOW + MODERATE + HIGH + CRITICAL))
+          echo "Vulnerabilities: $TOTAL (Info: $INFO, Low: $LOW, Moderate: $MODERATE, High: $HIGH, Critical: $CRITICAL)"
+          if [ "$TOTAL" -eq 0 ]; then
             echo "No vulnerabilities found. Exiting."
             exit 0
           fi
