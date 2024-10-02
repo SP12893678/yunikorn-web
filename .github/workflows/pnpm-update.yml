@@ -1,12 +1,12 @@
-name: Update pnpm dependencies
+name: Audit and Update pnpm Dependencies
 
 on:
   schedule:
-    - cron: '0 0 * * 1'  # weekly
-  workflow_dispatch:  # allow manual trigger
+    - cron: '0 0 * * 1'  # 每周一運行
+  workflow_dispatch:  # 允許手動觸發
 
 jobs:
-  update-dependencies:
+  audit-and-update-dependencies:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -14,26 +14,48 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '16'  # 根據你的專案需要設置版本
 
       - name: Install pnpm
         run: npm install -g pnpm
 
-      - name: Update dependencies
-        run: pnpm update
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run pnpm audit
+        id: audit
+        run: |
+          pnpm audit --json > audit-report.json
+          jq '.metadata.vulnerabilities.total' audit-report.json
+
+      - name: Check for vulnerabilities
+        id: check_vulnerabilities
+        run: |
+          VULNERABILITIES=$(jq '.metadata.vulnerabilities.total' audit-report.json)
+          echo "Vulnerabilities: $VULNERABILITIES"
+          if [ "$VULNERABILITIES" -eq 0 ]; then
+            echo "No vulnerabilities found. Exiting."
+            exit 0
+          fi
+
+      - name: Update dependencies if vulnerabilities found
+        if: steps.check_vulnerabilities.outcome == 'success'
+        run: pnpm update --latest
 
       - name: Commit and push updates
+        if: steps.check_vulnerabilities.outcome == 'success'
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add .
-          git commit -m "chore: update pnpm dependencies" || echo "No changes to commit"
+          git commit -m "chore: update pnpm dependencies due to security vulnerabilities" || echo "No changes to commit"
 
       - name: Create Pull Request
+        if: steps.check_vulnerabilities.outcome == 'success'
         uses: peter-evans/create-pull-request@v5
         with:
-          commit-message: "chore: update pnpm dependencies"
+          commit-message: "chore: update pnpm dependencies due to security vulnerabilities"
           branch: update-pnpm-dependencies
           title: "Update pnpm dependencies"
-          body: "This PR updates pnpm dependencies to the latest version."
+          body: "This PR updates pnpm dependencies due to detected security vulnerabilities."
           labels: dependencies
