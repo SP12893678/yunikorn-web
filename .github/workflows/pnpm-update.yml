@@ -1,0 +1,39 @@
+name: Update pnpm dependencies
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # 每周一運行
+  workflow_dispatch:  # 允許手動觸發
+
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'  # 根據你的專案需要設置版本
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Update dependencies
+        run: pnpm update --latest
+
+      - name: Commit and push updates
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          git commit -m "chore: update pnpm dependencies" || echo "No changes to commit"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "chore: update pnpm dependencies"
+          branch: update-pnpm-dependencies
+          title: "Update pnpm dependencies"
+          body: "This PR updates pnpm dependencies to the latest version."
+          labels: dependencies
